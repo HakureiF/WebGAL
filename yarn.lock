@@ -4262,6 +4262,13 @@ pixi-live2d-display-webgal@^0.5.2:
   dependencies:
     gh-pages "^4.0.0"
 
+pixi-live2d-display@^0.4.0:
+  version "0.4.0"
+  resolved "https://registry.npmmirror.com/pixi-live2d-display/-/pixi-live2d-display-0.4.0.tgz#f0628d1bb71765c042b85288344ef72d7b557fce"
+  integrity sha512-xeYC6y4Y0Bxe9ksWNlGFZC1rII/MPrzPQK7t1c3ubA8RhkOISIqHJl38fNumXqhGEs+yItmgDOkFT+9dsyGDjA==
+  dependencies:
+    gh-pages "^4.0.0"
+
 pixi-spine@^3.1.2:
   version "3.1.2"
   resolved "https://registry.yarnpkg.com/pixi-spine/-/pixi-spine-3.1.2.tgz#f63c5c566c2e74eae3e0c99da172f67404227398"

@@ -1,6 +1,6 @@
 import { ISentence } from '@/Core/controller/scene/sceneInterface';
 import { IPerform } from '@/Core/Modules/perform/performInterface';
-import { playVocal } from './vocal';
+import {defaltMouthOpen, playVocal} from './vocal';
 import { webgalStore } from '@/store/store';
 import { setStage } from '@/store/stageReducer';
 import { useTextDelay } from '@/hooks/useTextOptions';
@@ -84,6 +84,8 @@ export const say = (sentence: ISentence): IPerform => {
   // 播放一段语音
   if (vocal) {
     playVocal(sentence);
+  } else {
+    // defaltMouthOpen(sentence);
   }
 
   const performInitName: string = getRandomPerformName();

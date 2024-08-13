@@ -14,6 +14,76 @@ import {
 import { match } from '../../util/match';
 import { WebGAL } from '@/Core/WebGAL';
 
+export const defaltMouthOpen = (sentence: ISentence) => {
+  const performInitName = 'mouth-open';
+  let currentStageState: IStageState;
+  currentStageState = webgalStore.getState().stage;
+  let pos = '';
+  let key = '';
+  const freeFigure = currentStageState.freeFigure;
+  const figureAssociatedAnimation = currentStageState.figureAssociatedAnimation;
+  let bufferLength = 0;
+  let currentMouthValue = 0;
+  const lerpSpeed = 1;
+
+  for (const e of sentence.args) {
+    if (e.value === true) {
+      match(e.key)
+        .with('left', () => {
+          pos = 'left';
+        })
+        .with('right', () => {
+          pos = 'right';
+        })
+        .endsWith('center', () => {
+          pos = 'center';
+        });
+    }
+    if (e.key === 'figureId') {
+      key = `${e.value.toString()}`;
+    }
+  }
+
+  let isOver = false;
+
+  return {
+    arrangePerformPromise: new Promise(resolve => {
+      setTimeout(() => {
+        const perform = {
+          performName: performInitName,
+          duration: 1000 * 60 * 60,
+          isOver: false,
+          isHoldOn: false,
+          stopFunction: () => {
+            clearInterval(audioContextWrapper.audioLevelInterval);
+            key = key ? key : `fig-${pos}`;
+            const animationItem = figureAssociatedAnimation.find((tid) => tid.targetId === key);
+            performMouthAnimation({
+              audioLevel: 0,
+              OPEN_THRESHOLD: 1,
+              HALF_OPEN_THRESHOLD: 1,
+              currentMouthValue,
+              lerpSpeed,
+              key,
+              animationItem,
+              pos,
+            });
+            clearTimeout(audioContextWrapper.blinkTimerID);
+          },
+          blockingNext: () => false,
+          blockingAuto: () => {
+            return !isOver;
+          },
+          skipNextCollect: true,
+          stopTimeout: undefined, // 暂时不用，后面会交给自动清除
+        };
+        WebGAL.gameplay.performController.arrangeNewPerform(perform, sentence, false);
+        key = key ? key : `fig-${pos}`;
+      }, 1)
+    })
+  }
+}
+
 /**
  * 播放一段语音
  * @param sentence 语句
@@ -155,6 +225,17 @@ export const playVocal = (sentence: ISentence) => {
                 bufferLength,
               );
               const { OPEN_THRESHOLD, HALF_OPEN_THRESHOLD } = updateThresholds(audioLevel);
+
+              console.log({
+                audioLevel,
+                OPEN_THRESHOLD,
+                HALF_OPEN_THRESHOLD,
+                currentMouthValue,
+                lerpSpeed,
+                key,
+                animationItem,
+                pos,
+              })
 
               performMouthAnimation({
                 audioLevel,
