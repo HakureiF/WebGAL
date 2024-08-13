@@ -11,6 +11,8 @@ node_modules
 dist
 dist-ssr
 *.local
+public/game
+public/lib
 
 # Editor directories and files
 .vscode/*
