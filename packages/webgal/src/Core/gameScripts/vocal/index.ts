@@ -14,15 +14,31 @@ import {
 import { match } from '../../util/match';
 import { WebGAL } from '@/Core/WebGAL';
 
-export const defaltMouthOpen = (sentence: ISentence) => {
+export const audioArray: number[] = [
+  8,
+  15,
+  35,
+  45,
+  53,
+  59,
+  65,
+  70,
+  75,
+  70,
+  60,
+  50,
+  36,
+  15,
+];
+export let mounthOpen = true;
+export const defaltMouthOpen = (sentence: ISentence, startTime: number, endDelay: number) => {
+
   const performInitName = 'mouth-open';
   let currentStageState: IStageState;
   currentStageState = webgalStore.getState().stage;
   let pos = '';
   let key = '';
-  const freeFigure = currentStageState.freeFigure;
   const figureAssociatedAnimation = currentStageState.figureAssociatedAnimation;
-  let bufferLength = 0;
   let currentMouthValue = 0;
   const lerpSpeed = 1;
 
@@ -44,7 +60,8 @@ export const defaltMouthOpen = (sentence: ISentence) => {
     }
   }
 
-  let isOver = false;
+  if (pos === '' && key === '') return;
+
 
   return {
     arrangePerformPromise: new Promise(resolve => {
@@ -55,7 +72,8 @@ export const defaltMouthOpen = (sentence: ISentence) => {
           isOver: false,
           isHoldOn: false,
           stopFunction: () => {
-            clearInterval(audioContextWrapper.audioLevelInterval);
+            mounthOpen = false;
+            clearInterval(audioContextWrapper.defaultMouthInterval);
             key = key ? key : `fig-${pos}`;
             const animationItem = figureAssociatedAnimation.find((tid) => tid.targetId === key);
             performMouthAnimation({
@@ -71,14 +89,62 @@ export const defaltMouthOpen = (sentence: ISentence) => {
             clearTimeout(audioContextWrapper.blinkTimerID);
           },
           blockingNext: () => false,
-          blockingAuto: () => {
-            return !isOver;
-          },
+          blockingAuto: () => false,
           skipNextCollect: true,
           stopTimeout: undefined, // 暂时不用，后面会交给自动清除
         };
         WebGAL.gameplay.performController.arrangeNewPerform(perform, sentence, false);
         key = key ? key : `fig-${pos}`;
+        const animationItem = figureAssociatedAnimation.find((tid) => tid.targetId === key);
+
+        mounthOpen = true;
+        setTimeout(() => {
+          clearInterval(audioContextWrapper.defaultMouthInterval);
+          mounthOpen = false;
+          performMouthAnimation({
+            audioLevel: 0,
+            OPEN_THRESHOLD: 1,
+            HALF_OPEN_THRESHOLD: 1,
+            currentMouthValue,
+            lerpSpeed,
+            key,
+            animationItem,
+            pos,
+          });
+        }, endDelay);
+
+        audioContextWrapper.defaultMouthInterval = setInterval(() => {
+          if (mounthOpen) {
+            const nowTime = new Date().getTime();
+            let audioLevel = 0;
+            let tmp = Math.floor((nowTime - startTime)/35) % audioArray.length;
+            audioLevel = audioArray[tmp]
+
+            const { OPEN_THRESHOLD, HALF_OPEN_THRESHOLD } = updateThresholds(audioLevel);
+            performMouthAnimation({
+              audioLevel,
+              OPEN_THRESHOLD,
+              HALF_OPEN_THRESHOLD,
+              currentMouthValue,
+              lerpSpeed,
+              key,
+              animationItem,
+              pos,
+            });
+          }
+        }, 20);
+
+        // blinkAnimation
+        let animationEndTime: number;
+
+        // 10sec
+        animationEndTime = Date.now() + 10000;
+        performBlinkAnimation({ key, animationItem, pos, animationEndTime });
+
+        // 10sec
+        setTimeout(() => {
+          clearTimeout(audioContextWrapper.blinkTimerID);
+        }, 10000);
       }, 1)
     })
   }
@@ -90,6 +156,7 @@ export const defaltMouthOpen = (sentence: ISentence) => {
  */
 export const playVocal = (sentence: ISentence) => {
   logger.debug('play vocal');
+  mounthOpen = false;
   const performInitName = 'vocal-play';
   const url = getSentenceArgByKey(sentence, 'vocal'); // 获取语音的url
   const volume = getSentenceArgByKey(sentence, 'volume'); // 获取语音的音量比
@@ -224,19 +291,9 @@ export const playVocal = (sentence: ISentence) => {
                 audioContextWrapper.dataArray!,
                 bufferLength,
               );
+              // audioArray.push(audioLevel);
+              // console.log(audioArray);
               const { OPEN_THRESHOLD, HALF_OPEN_THRESHOLD } = updateThresholds(audioLevel);
-
-              console.log({
-                audioLevel,
-                OPEN_THRESHOLD,
-                HALF_OPEN_THRESHOLD,
-                currentMouthValue,
-                lerpSpeed,
-                key,
-                animationItem,
-                pos,
-              })
-
               performMouthAnimation({
                 audioLevel,
                 OPEN_THRESHOLD,
@@ -247,7 +304,7 @@ export const playVocal = (sentence: ISentence) => {
                 animationItem,
                 pos,
               });
-            }, 50);
+            }, 20);
 
             // blinkAnimation
             let animationEndTime: number;
@@ -265,6 +322,7 @@ export const playVocal = (sentence: ISentence) => {
           VocalControl?.play();
 
           VocalControl.onended = () => {
+            logger.debug("语音演出清空")
             for (const e of WebGAL.gameplay.performController.performList) {
               if (e.performName === performInitName) {
                 isOver = true;

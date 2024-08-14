@@ -39,6 +39,11 @@ export const say = (sentence: ISentence): IPerform => {
   dispatch(setStage({ key: 'showText', value: dialogToShow }));
   dispatch(setStage({ key: 'vocal', value: '' }));
 
+  // 计算延迟
+  const textDelay = useTextDelay(userDataState.optionData.textSpeed);
+  // 本句延迟
+  const sentenceDelay = textDelay * sentence.content.length;
+
   // 清除语音
   if (!(userDataState.optionData.voiceInterruption === voiceOption.no && vocal === null)) {
     // 只有开关设置为不中断，并且没有语音的时候，才需要不中断
@@ -47,10 +52,7 @@ export const say = (sentence: ISentence): IPerform => {
   }
   // 设置key
   dispatch(setStage({ key: 'currentDialogKey', value: dialogKey }));
-  // 计算延迟
-  const textDelay = useTextDelay(userDataState.optionData.textSpeed);
-  // 本句延迟
-  const sentenceDelay = textDelay * sentence.content.length;
+
 
   for (const e of sentence.args) {
     if (e.key === 'fontSize') {
@@ -81,15 +83,15 @@ export const say = (sentence: ISentence): IPerform => {
   }
   dispatch(setStage({ key: 'showName', value: showName }));
 
+  const performInitName: string = getRandomPerformName();
+  let endDelay = 3000 - userDataState.optionData.textSpeed * 250;
   // 播放一段语音
   if (vocal) {
     playVocal(sentence);
   } else {
-    // defaltMouthOpen(sentence);
+    defaltMouthOpen(sentence, new Date().getTime(), sentenceDelay + endDelay);
   }
 
-  const performInitName: string = getRandomPerformName();
-  let endDelay = 750 - userDataState.optionData.textSpeed * 250;
   // 如果有 notend 参数，那么就不需要等待
   if (isNotend) {
     endDelay = 0;

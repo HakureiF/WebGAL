@@ -6,6 +6,7 @@ interface IAudioContextWrapper {
   analyser: AnalyserNode | undefined;
   dataArray: Uint8Array | undefined;
   audioLevelInterval: ReturnType<typeof setInterval>;
+  defaultMouthInterval: ReturnType<typeof setInterval>;
   blinkTimerID: ReturnType<typeof setTimeout>;
   maxAudioLevel: number;
 }
@@ -17,6 +18,7 @@ export const audioContextWrapper: IAudioContextWrapper = {
   analyser: undefined,
   dataArray: undefined,
   audioLevelInterval: setInterval(() => {}, 0), // dummy interval
+  defaultMouthInterval: setInterval(() => {}, 0),
   blinkTimerID: setTimeout(() => {}, 0), // dummy timeout
   maxAudioLevel: 0,
 };
