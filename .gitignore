@@ -11,8 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
-public/game
-public/lib
+packages/webgal/public
 
 # Editor directories and files
 .vscode/*
@@ -26,6 +25,5 @@ public/lib
 *.sw?
 .eslintcache
 stats.html
-packages/webgal/public/game.old
 packages/parser/build
 packages/webgal/src/Core/util/pixiPerformManager/initRegister.ts
