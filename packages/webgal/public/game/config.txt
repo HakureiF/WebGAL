@@ -1,5 +1,0 @@
-Game_name:锁上我的明日;
-Game_key:170bcd2d7b36699;
-Title_img:六明日1.png;
-Game_Logo:10001 (1).png;
-Textbox_theme:imss;
