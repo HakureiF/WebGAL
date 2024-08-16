@@ -8,6 +8,7 @@ import { getRandomPerformName, PerformController } from '@/Core/Modules/perform/
 import { getSentenceArgByKey } from '@/Core/util/getSentenceArg';
 import { textSize, voiceOption } from '@/store/userDataInterface';
 import { WebGAL } from '@/Core/WebGAL';
+import {end} from "@/Core/gameScripts/end";
 
 /**
  * 进行普通对话的显示
@@ -84,7 +85,8 @@ export const say = (sentence: ISentence): IPerform => {
   dispatch(setStage({ key: 'showName', value: showName }));
 
   const performInitName: string = getRandomPerformName();
-  let endDelay = 3000 - userDataState.optionData.textSpeed * 250;
+  let endDelay = 50 * sentence.content.length;
+
   // 播放一段语音
   if (vocal) {
     playVocal(sentence);
