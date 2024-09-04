@@ -25,7 +25,7 @@ export const whenChecker = (whenValue: string | undefined): boolean => {
         if (e.match(/true/) || e.match(/false/)) {
           return e;
         }
-        return getValueFromStateElseKey(e);
+        return getValueFromStateElseKey(e, true);
       } else return e;
     })
     .reduce((pre, curr) => pre + curr, '');
@@ -59,7 +59,7 @@ export const scriptExecutor = () => {
 
     if (contentExp !== null) {
       contentExp.forEach((e) => {
-        const contentVarValue = getValueFromStateElseKey(e.replace(/(?<!\\)\{(.*)\}/, '$1'));
+        const contentVarValue = getValueFromStateElseKey(e.replace(/(?<!\\)\{(.*)\}/, '$1'), true);
         retContent = retContent.replace(e, contentVarValue);
       });
     }

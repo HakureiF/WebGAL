@@ -12,6 +12,20 @@ import { compileSentence } from '@/Stage/TextBox/TextBox';
 import { performMouthAnimation } from '@/Core/gameScripts/vocal/vocalAnimation';
 import { match } from '@/Core/util/match';
 
+const generateSineFunction = (a: number, b: number, periods: number, amplitude: number) => {
+  const periodLength = (b - a) / periods;
+  const frequency = 2 * Math.PI / periodLength;
+
+  return (x: number): number => {
+    if (x < a || x > b) {
+      return 0; // 超出区间返回0
+    }
+    // 使用 sin^2 函数确保非负性
+    return Math.floor(50 * amplitude * Math.sin(frequency * (x - a)) ** 2);
+  };
+}
+
+
 /**
  * 进行普通对话的显示
  * @param sentence 语句
@@ -88,7 +102,7 @@ export const say = (sentence: ISentence): IPerform => {
 
   // 模拟说话
   let performSimulateVocalTimeout: ReturnType<typeof setTimeout> | null = null;
-  let performSimulateVocalDelay = 0;
+  let performSimulateVocalDelay = len * 250;
   let pos = '';
   let key = '';
   for (const e of sentence.args) {
@@ -108,15 +122,65 @@ export const say = (sentence: ISentence): IPerform => {
       key = `${e.value.toString()}`;
     }
   }
-  let audioLevel = 80;
-  const performSimulateVocal = (end = false) => {
-    let nextAudioLevel = audioLevel + (Math.random() * 60 - 30); // 在 -30 到 +30 之间波动
-    // 确保波动幅度不小于 5
-    if (Math.abs(nextAudioLevel - audioLevel) < 5) {
-      nextAudioLevel = audioLevel + Math.sign(nextAudioLevel - audioLevel) * 5;
+
+  // 根据文本生成模拟说话值序列
+  let audioLevelIndex = 0;
+  let audioLevelArray: number[] = [];
+  const preArray = sentence.content.split('');
+  const charArray = [];
+  for (let i = 0; i < preArray.length; i++) {
+    if ((preArray[i] === '.' || preArray[i] === '。') && ((preArray[i-1] === '.' || preArray[i-1] === '。'))) {
+      charArray.push(preArray[i]);
+      charArray.push(preArray[i]);
+      charArray.push(preArray[i]);
     }
-    // 确保结果在 25 到 100 之间
-    audioLevel = Math.max(15, Math.min(nextAudioLevel, 100));
+    charArray.push(preArray[i]);
+  }
+  charArray.push('。')
+
+  let j = 0;
+  let msPerFreme = 50;
+  let totalFrame = performSimulateVocalDelay/msPerFreme;
+  for (let i = 0; i < charArray.length; i++) {
+    let isAlpha_i = /[\p{P}\p{S}]/u.test(charArray[i])
+    let isAlpha_j = /[\p{P}\p{S}]/u.test(charArray[j])
+    if (isAlpha_j !== isAlpha_i) {
+      const levelArray = []
+      let end = (i-j) * totalFrame/charArray.length;
+      if (isAlpha_j) {
+        for (let k = 0; k < end; k++) {
+          levelArray.push(0);
+        }
+      } else {
+        let periods = end/16; // 三角函数周期界定，
+        let amplitude1 = 1;
+        let levelFunc1 = generateSineFunction(0, end, periods, amplitude1);
+
+        // let a2 = Math.random() * end / 3;
+        let amplitude2 = 0.5 + Math.random() * 0.5;
+        let levelFunc2 = generateSineFunction(0, end, periods, amplitude2);
+
+        // let b3 = end - Math.random() * end / 3;
+        let amplitude3 = 0.5 +Math.random() * 0.5;
+        let levelFunc3 = generateSineFunction(0, end, periods, amplitude3);
+
+        for (let k =0; k < end; k++) {
+          levelArray.push(levelFunc1(k) + levelFunc2(k) + levelFunc3(k));
+        }
+      }
+      audioLevelArray.push(...levelArray)
+      j = i;
+    }
+  }
+
+  let audioLevel = 0;
+  const performSimulateVocal = (end = false) => {
+    if (audioLevelIndex < audioLevelArray.length) {
+      audioLevel = audioLevelArray[audioLevelIndex];
+      audioLevelIndex++;
+    } else {
+      audioLevel = 0
+    }
     const currentStageState = webgalStore.getState().stage;
     const figureAssociatedAnimation = currentStageState.figureAssociatedAnimation;
     const animationItem = figureAssociatedAnimation.find((tid) => tid.targetId === key);
@@ -140,7 +204,6 @@ export const say = (sentence: ISentence): IPerform => {
   if (vocal) {
     playVocal(sentence);
   } else if (key || pos) {
-    performSimulateVocalDelay = len * 250;
     performSimulateVocal();
   }
 
