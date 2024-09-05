@@ -68,6 +68,7 @@ export const setVar = (sentence: ISentence): IPerform => {
       if (!isNaN(Number(valExp))) {
         webgalStore.dispatch(targetReducerFunction({ key, value: Number(valExp) }));
       } else {
+        // 字符串
         webgalStore.dispatch(targetReducerFunction({ key, value: getValueFromStateElseKey(valExp, true) }));
       }
     }
